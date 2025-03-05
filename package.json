@@ -9,18 +9,23 @@
   ],
   "scripts": {
     "build": "turbo build",
-    "dev": "turbo dev",
+    "dev": "turbo dev --parallel",
+    "dev:web": "turbo dev --filter=@workspace/web",
+    "dev:app": "turbo dev --filter=@workspace/app",
+    "dev:backend": "turbo dev --filter=@workspace/backend",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules bun.lock"
   },
   "devDependencies": {
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
     "prettier": "^3.5.1",
     "turbo": "^2.4.2",
-    "typescript": "5.7.3"
+    "typescript": "^5.7.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "bun": ">=1.1.0"
   }
 }

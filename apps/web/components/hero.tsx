@@ -1,9 +1,13 @@
 "use client"
+
 import { TypewriterEffectSmooth } from "@workspace/ui/components/typewriter-effect"
 import { Button } from "@workspace/ui/components/button"
 import { GithubIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function Hero() {
+  const router = useRouter()
+
   const words = [
     {
       text: "Build",
@@ -36,7 +40,12 @@ export default function Hero() {
           <GithubIcon className="size-4" />
           Github
         </Button>
-        <Button className="w-40 h-10 bg-white text-black border border-black  text-sm">Signup</Button>
+        <Button
+          className="w-40 h-10 bg-white text-black border border-black  text-sm"
+          onClick={() => router.push("http://localhost:3000")}
+        >
+          Demo
+        </Button>
       </div>
     </div>
   )

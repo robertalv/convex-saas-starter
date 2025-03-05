@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/backend",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy"
+  },
+  "dependencies": {
+    "@convex-dev/aggregate": "^0.1.14",
+    "@convex-dev/auth": "^0.0.57",
+    "@convex-dev/migrations": "^0.2.5",
+    "@convex-dev/react-query": "^0.0.0-alpha.5",
+    "@react-email/components": "^0.0.15",
+    "convex": "^1.17.0",
+    "convex-helpers": "^0.1.63",
+    "openai": "^4.61.1",
+    "resend": "^3.2.0",
+    "standardwebhooks": "^1.0.0",
+    "stripe": "^17.7.0"
+  },
+  "devDependencies": {
+    "@workspace/typescript-config": "workspace:*",
+    "typescript": "^5.7.3"
+  }
+}
