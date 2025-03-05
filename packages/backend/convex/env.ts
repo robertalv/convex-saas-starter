@@ -3,3 +3,11 @@ export const SITE_URL = process.env.BASE_URL;
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 export const AUTH_RESEND_KEY = process.env.AUTH_RESEND_KEY;
 export const BASE_URL = process.env.BASE_URL;
+
+export const env = {
+    STRIPE_SECRET_KEY,
+    SITE_URL,
+    STRIPE_WEBHOOK_SECRET,
+    AUTH_RESEND_KEY,
+    BASE_URL,
+};

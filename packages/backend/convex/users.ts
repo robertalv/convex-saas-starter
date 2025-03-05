@@ -2,16 +2,36 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { aggregateUsers } from "./custom";
 import { sendInvitationSuccessEmail } from "./email/templates/invitationEmails";
 import { userFields } from "./fields";
 import { hasAccessToOrg } from "./utils/helpers";
+import { OrganizationRole } from "./validators";
 
 export const create = mutation({
   args: {
-    id: v.string(),
-    ...userFields
+    email: v.optional(v.string()),
+    emailVerified: v.optional(v.boolean()),
+    emailVerificationTime: v.optional(v.float64()),
+    image: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    phoneVerified: v.optional(v.boolean()),
+    phoneVerificationTime: v.optional(v.float64()),
+    isOnboardingComplete: v.optional(v.boolean()),
+    orgIds: v.optional(v.array(v.object({
+      id: v.id("organization"),
+      role: OrganizationRole,
+      status: v.union(v.literal("pending"), v.literal("active"), v.literal("disabled")),
+      invitedBy: v.optional(v.id("users")),
+      invitedTime: v.optional(v.float64()),
+    }))),
+    providers: v.optional(v.array(v.string())),
+    activeOrgId: v.union(v.id("organization"), v.literal("")),
+    accounts: v.optional(v.array(v.id("accounts"))),
   },
   handler: async (ctx, args) => {
     const existingUser = await ctx.db
@@ -59,7 +79,22 @@ export const create = mutation({
 export const update = mutation({
   args: {
     id: v.id("users"),
-    ...userFields
+    email: v.optional(v.string()),
+    emailVerified: v.optional(v.boolean()),
+    image: v.optional(v.string()),
+    isOnboardingComplete: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    orgIds: v.optional(v.array(v.object({
+      id: v.id("organization"),
+      role: v.union(v.literal("org:admin"), v.literal("org:member")),
+      status: v.union(v.literal("pending"), v.literal("active"), v.literal("disabled"))
+    }))),
+    activeOrgId: v.optional(v.id("organization")),
+    providers: v.optional(v.array(v.string())),
+    accounts: v.optional(v.array(v.id("accounts")))
   },
   handler: async (ctx, args) => {
     const { id, ...userFields } = args;
@@ -353,5 +388,19 @@ export const getUserByEmail = query({
       _id: user._id,
       ...userFields
     };
+  },
+});
+
+export const getLoggedInUser = internalQuery({
+  args: {
+    id: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .withIndex("by_id", (q) =>
+        q.eq("_id", args.id as Id<"users">)
+      )
+      .unique();
   },
 });

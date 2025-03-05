@@ -1,5 +1,5 @@
 {
-  "name": "shadcn-ui-monorepo",
+  "name": "convex-starter",
   "version": "0.0.1",
   "private": true,
   "packageManager": "bun@1.1.26",
@@ -15,7 +15,9 @@
     "dev:backend": "turbo dev --filter=@workspace/backend",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules bun.lock"
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules bun.lock",
+    "stripe:listen": "stripe listen --forward-to https://dynamic-starling-749.convex.site/stripe",
+    "stripe:trigger": "stripe trigger payment_intent.succeeded"
   },
   "devDependencies": {
     "@workspace/eslint-config": "*",

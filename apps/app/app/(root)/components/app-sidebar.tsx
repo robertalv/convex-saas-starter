@@ -24,7 +24,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@cvxstarter/ui/components/ui/sidebar"
+} from "@workspace/ui/components/sidebar"
 
 // This is sample data.
 const data = {

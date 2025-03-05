@@ -12,6 +12,7 @@ import {
 import { stripe } from "./stripe";
 import { ERRORS } from "./utils/errors";
 import { Currency, Interval } from "./validators";
+import { env } from "./env";
 
 const http = httpRouter();
 
@@ -88,7 +89,12 @@ const handleCheckoutSessionCompleted = async (
 
   await handleUpdateSubscription(ctx, org, subscription);
 
-  const user = await ctx.runQuery(internal.utils.helpers.currentUser);
+  const identity = await ctx.auth.getUserIdentity();
+  const subject = identity?.subject.split("|")[0] as Id<"users">;
+
+  const user = await ctx.runQuery(internal.users.getLoggedInUser, {
+    id: subject,
+  });
 
   if (!user || !user.email) {
     throw new Error(ERRORS.USER_EMAIL_NOT_FOUND);
@@ -116,7 +122,12 @@ const handleCheckoutSessionCompletedError = async (
     customerId,
   });
 
-  const user = await ctx.runQuery(internal.utils.helpers.currentUser);
+  const identity = await ctx.auth.getUserIdentity();
+  const subject = identity?.subject.split("|")[0] as Id<"users">;
+
+  const user = await ctx.runQuery(internal.users.getLoggedInUser, {
+    id: subject,
+  });
 
   if (!user || !user.email) {
     throw new Error(ERRORS.USER_EMAIL_NOT_FOUND);
@@ -163,7 +174,12 @@ const handleCustomerSubscriptionUpdatedError = async (
   });
   if (!org) throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
 
-  const user = await ctx.runQuery(internal.utils.helpers.currentUser);
+  const identity = await ctx.auth.getUserIdentity();
+  const subject = identity?.subject.split("|")[0] as Id<"users">;
+
+  const user = await ctx.runQuery(internal.users.getLoggedInUser, {
+    id: subject,
+  });
 
   if (!user || !user.email) {
     throw new Error(ERRORS.USER_EMAIL_NOT_FOUND);

@@ -11,13 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@cvxstarter/ui/components/ui/dropdown-menu"
+} from "@workspace/ui/components/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@cvxstarter/ui/components/ui/sidebar"
+} from "@workspace/ui/components/sidebar"
 
 export function OrgSwitcher({
   orgs,

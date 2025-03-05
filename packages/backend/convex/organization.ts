@@ -12,6 +12,7 @@ import {
 } from "./_generated/server";
 import { hasAccessToOrg, user } from "./utils/helpers";
 import { currencyValidator, PLANS } from "./validators";
+import { getRandomColor } from "./utils/tools";
 
 const generateUniqueCode = () => {
   return Math.random().toString(36).substring(2, 10).replace(/[^a-zA-Z0-9]/g, '');
@@ -24,7 +25,7 @@ export const refreshJoinCode = mutation({
   handler: async (ctx, args) => {
     const currentUser = await user(ctx) as any;
 
-    
+
     const userOrgIds = currentUser?.orgIds;
     if (!userOrgIds || !userOrgIds.some((org: any) => org.role === "org:admin")) {
       throw new ConvexError("You are not authorized to refresh the join code");
@@ -39,11 +40,10 @@ export const refreshJoinCode = mutation({
   },
 });
 
-export const createOrganization = mutation({
+export const create = mutation({
   args: {
     name: v.string(),
     slug: v.string(),
-    color: v.string(),
     image: v.optional(v.string()),
     plan: v.optional(v.string()),
   },
@@ -55,11 +55,11 @@ export const createOrganization = mutation({
     }
 
     const disallowedSlugs = [
-      "organization", 
-      "onboarding", 
-      "no-access", 
-      "signin", 
-      "signup", 
+      "organization",
+      "onboarding",
+      "no-access",
+      "signin",
+      "signup",
       "organizations",
       "document",
       "api",
@@ -84,7 +84,7 @@ export const createOrganization = mutation({
       name: args.name,
       image: args.image,
       slug: args.slug,
-      color: args.color,
+      color: getRandomColor(),
       ownerId: currentUser?._id as Id<"users">,
       joinCode: joinCode,
       plan: args.plan,
@@ -94,7 +94,7 @@ export const createOrganization = mutation({
       ...(currentUser?.orgIds || []),
       {
         id: newOrg as Id<"organization">,
-        role: "org:admin" as "org:admin" | "org:member",
+        role: "org:owner" as "org:owner" | "org:admin" | "org:member",
         status: "active" as "pending" | "active" | "disabled",
       },
     ];
@@ -108,14 +108,6 @@ export const createOrganization = mutation({
       orgIds: updatedOrgIds,
     });
 
-    await ctx.scheduler.runAfter(0, internal.ingest.extract.extractOrganizationInfo, {
-      args: {
-        ...args,
-        id: newOrg as Id<"organization">,
-        ownerId: currentUser._id as Id<"users">,
-    }
-  })
-
     return {
       error: false,
       id: newOrg as Id<"organization">,
@@ -128,7 +120,7 @@ export const getActiveOrganization = query({
   args: {},
   handler: async (ctx, args) => {
     const currentUser = await user(ctx);
-    
+
     const org = await ctx.db
       .query("organization")
       .withIndex("by_id", (q) =>
@@ -136,43 +128,43 @@ export const getActiveOrganization = query({
       )
       .unique();
 
-      if (!org) {
-        return;
-      }
+    if (!org) {
+      return;
+    }
 
-      const [orgId, subscription] = await Promise.all([
-        ctx.db.get(currentUser?.activeOrgId as Id<"organization">),
-        ctx.db
-          .query("subscriptions")
-          .filter((q) => q.eq(q.field("orgId"), currentUser?.activeOrgId))
-          .unique(),
-      ]);
-      
+    const [orgId, subscription] = await Promise.all([
+      ctx.db.get(currentUser?.activeOrgId as Id<"organization">),
+      ctx.db
+        .query("subscriptions")
+        .filter((q) => q.eq(q.field("orgId"), currentUser?.activeOrgId))
+        .unique(),
+    ]);
 
-      if (!orgId) {
-        return;
-      }
 
-      const imageId = org.image?.split("storageId=")[1];
+    if (!orgId) {
+      return;
+    }
 
-      const plan = subscription?.planId
-        ? await ctx.db.get(subscription.planId)
-        : undefined;
-      const imageUrl = org.image
-        ? await ctx.storage.getUrl(imageId as Id<"_storage">)
-        : undefined;
-      return {
-        ...org,
-        _id: orgId._id,
-        image: imageUrl || undefined,
-        subscription:
-          subscription && plan
-            ? {
-              ...subscription,
-              planKey: plan.key
-            }
-            : undefined,
-      }
+    const imageId = org.image?.split("storageId=")[1];
+
+    const plan = subscription?.planId
+      ? await ctx.db.get(subscription.planId)
+      : undefined;
+    const imageUrl = org.image
+      ? await ctx.storage.getUrl(imageId as Id<"_storage">)
+      : undefined;
+    return {
+      ...org,
+      _id: orgId._id,
+      image: imageUrl || undefined,
+      subscription:
+        subscription && plan
+          ? {
+            ...subscription,
+            planKey: plan.key
+          }
+          : undefined,
+    }
   },
 });
 
@@ -190,9 +182,9 @@ export const completeOnboarding = mutation({
     const user = await ctx.db.get(userId);
     if (!user) {
       return;
-    
+
     }
-    
+
     const org = await ctx.db.get(args.orgId);
     if (!org) {
       return;
@@ -224,7 +216,7 @@ export const acceptUser = mutation({
   handler: async (ctx, args) => {
     const org = await ctx.db.get(args.orgId);
     const user = await ctx.db.get(args.userId);
-    
+
     if (!org) {
       throw new Error("Organization not found");
     }
@@ -238,7 +230,7 @@ export const acceptUser = mutation({
     }
 
     const orgIndex = user.orgIds?.findIndex(org => org.id === args.orgId);
-    
+
     user.orgIds[orgIndex].status = "active";
 
     await ctx.db.patch(args.userId, {
@@ -255,7 +247,7 @@ export const removeUser = mutation({
   handler: async (ctx, args) => {
     const org = await ctx.db.get(args.orgId);
     const user = await ctx.db.get(args.userId);
-    
+
     if (!org) {
       throw new Error("Organization not found");
     }
@@ -272,7 +264,7 @@ export const removeUser = mutation({
 
     if (orgIndex !== undefined && orgIndex !== -1) {
       user.orgIds.splice(orgIndex, 1);
-    
+
       await ctx.db.patch(args.userId, {
         orgIds: user.orgIds,
       });
@@ -394,7 +386,7 @@ export const updateOrganization = mutation({
       updatedBy: currentUser._id as Id<"users">,
       updatedTime: new Date().toISOString(),
     };
-    
+
     if (name) {
       updates.name = name;
       updates.slug = name.toLowerCase().replace(/\s+/g, '-');
@@ -425,7 +417,7 @@ export const getOrgData = internalQuery({
 export const getOrganization = internalQuery({
   args: { orgId: v.string() },
   handler: async (ctx, args) => {
-      return getFullOrganization(ctx, args.orgId);
+    return getFullOrganization(ctx, args.orgId);
   },
 });
 
@@ -483,7 +475,7 @@ export const deleteOrganization = mutation({
         newOrg = await ctx.db.get(firstOrg);
       }
     }
-    
+
     await ctx.db.patch(u?._id as Id<"users">, {
       orgIds: (u?.orgIds || []).filter(org => org.id !== args.id)
     });
@@ -519,9 +511,9 @@ export const checkUserOrganizationSlug = query({
 
 export function getFullOrganization(ctx: QueryCtx | MutationCtx, orgId: string) {
   return ctx.db
-      .query("organization")
-      .withIndex("by_id", (q) => q.eq("_id", orgId as Id<"organization">))
-      .first();
+    .query("organization")
+    .withIndex("by_id", (q) => q.eq("_id", orgId as Id<"organization">))
+    .first();
 }
 
 function jsonToCsv(json: any): string {

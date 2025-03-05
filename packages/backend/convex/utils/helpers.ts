@@ -1,64 +1,54 @@
 import type { Id } from "../_generated/dataModel";
 import { internalQuery, MutationCtx, QueryCtx } from "../_generated/server";
 
+// Get the current user
 export const user = async (
   ctx: QueryCtx | MutationCtx
 ) => {
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject.split("|")[0] as Id<"users">;
+  const identity = await ctx.auth.getUserIdentity();
+  const subject = identity?.subject.split("|")[0] as Id<"users">;
 
-    if (!identity) {
-        return null;
-    }
+  if (!identity) {
+    return null;
+  }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_id", (q) =>
-        q.eq("_id", subject)
-      )
-      .first();
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_id", (q) =>
+      q.eq("_id", subject)
+    )
+    .first();
 
-    if (!user) {
-        return null;
-    }
+  if (!user) {
+    return null;
+  }
 
-    return user;
+  return user;
 }
 
+// Check if the current user has access to an organization
 export async function hasAccessToOrg(
   ctx: QueryCtx | MutationCtx,
   orgId: string
 ) {
-    const identity = await ctx.auth.getUserIdentity();
+  const currentUser = await user(ctx);
 
-    if (!identity) {
-        return null;
-    }
+  if (!currentUser) {
+    return null;
+  }
 
-    const subject = identity.subject.split("|")[0] as Id<"users">;
+  const orgIds = currentUser.orgIds ?? [];
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_id", (q) =>
-        q.eq("_id", subject)
-      )
-      .first();
+  const hasAccess = orgIds.some((item) => item.id === orgId)
 
-    if (!user) {
-        return null;
-    }
+  if (!hasAccess) {
+    return null;
+  }
 
-    const orgIds = user.orgIds ?? [];
-
-    const hasAccess = orgIds.some((item) => item.id === orgId)
-
-    if (!hasAccess) {
-        return null;
-    }
-
-    return { user };
+  return { user: currentUser };
 }
 
+// Internal query for actions to get the current user
 export const currentUser = internalQuery({
   handler: async (ctx: QueryCtx | MutationCtx) => {
     return user(ctx);

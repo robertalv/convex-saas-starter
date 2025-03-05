@@ -21,11 +21,7 @@ export const aggregateUsers = new TableAggregate<{
 }>(
   components.aggregateUsers,
   {
-    sortKey: (doc) => {
-      const firstOrgId = doc.orgIds?.[0]?.id;
-      const orgId = firstOrgId || ("" as unknown as Id<"organization">);
-      return [orgId, doc._id, doc.activeOrgId ?? ""];
-    }
+    sortKey: (doc) => [doc.activeOrgId as Id<"organization">, doc._id, doc.name as string]
   }
 );
 

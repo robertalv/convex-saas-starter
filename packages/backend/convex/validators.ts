@@ -27,13 +27,13 @@ export const intervalValidator = v.union(
 export type Interval = Infer<typeof intervalValidator>;
 
 export const PLANS = {
-  // FREE: "free",
+  FREE: "free",
   STANDARD: "standard",
   PRO: "pro",
   ENTERPRISE: "enterprise",
 } as const;
 export const planKeyValidator = v.union(
-  // v.literal(PLANS.FREE),
+  v.literal(PLANS.FREE),
   v.literal(PLANS.STANDARD),
   v.literal(PLANS.PRO),
   v.literal(PLANS.ENTERPRISE),

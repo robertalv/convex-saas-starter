@@ -1,0 +1,57 @@
+import { Id } from "@workspace/backend/convex/_generated/dataModel";
+
+export type UserProfile = {
+  accounts?: Id<"accounts">[] | undefined;
+  email?: string | undefined;
+  emailVerified?: boolean | undefined;
+  image?: string | undefined;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
+  name?: string | undefined;
+  phone?: string | undefined;
+  isOnboardingComplete?: boolean | undefined;
+  id: Id<"users">;
+}
+
+export type User = {
+  _creationTime: number;
+  _id: Id<"users">;
+  activeOrgId?: Id<"organization"> | ActiveOrg | string;
+  email: string;
+  emailVerificationTime?: number;
+  emailVerified?: boolean;
+  image?: string;
+  isOnboardingComplete: boolean;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  orgIds?: {
+    id: Id<"organization">;
+    role: OrganizationRole;
+    status: Status;
+  }[];
+  phone?: string;
+  phoneVerified?: boolean;
+  providers?: string[];
+  activeOrg?: ActiveOrg;
+}
+
+export type ActiveOrg = {
+  _id: Id<"organization">;
+  _creationTime: number;
+  name: string;
+  image?: string;
+  slug: string;
+  color: string;
+  customerId?: string;
+  extendedFreeTrial?: boolean;
+  updatedBy?: Id<"users">;
+  updatedTime?: number;
+  ownerId?: Id<"users">;
+  joinCode?: string;
+  plan?: string;
+}
+
+export type OrganizationRole = "org:owner" | "org:admin" | "org:member"
+
+export type Status = "pending" | "active" | "disabled"

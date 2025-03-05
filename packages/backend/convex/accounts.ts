@@ -1,8 +1,7 @@
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
-import { internalAction, internalMutation } from "./custom";
+import { internalMutation } from "./custom";
 import { user } from "./utils/helpers";
 
 export const create = mutation({
@@ -86,35 +85,35 @@ export const patchAccountToken = internalMutation({
   }
 })
 
-export const refreshGoogleTokens = internalAction({
-  handler: async (ctx) => {
-    const user = await ctx.runMutation(internal.helpers.standardHelpers.getUserId);
+// export const refreshGoogleTokens = internalAction({
+//   handler: async (ctx) => {
+//     const user = await ctx.runMutation(internal.helpers.standardHelpers.getUserId);
 
-    const accounts = await ctx.runQuery(internal.accounts.queryAccounts, {
-      userId: user?._id as Id<"users">
-    });
+//     const accounts = await ctx.runQuery(internal.accounts.queryAccounts, {
+//       userId: user?._id as Id<"users">
+//     });
 
-    for (const account of accounts) {
-      if (account.refreshToken && account.expiresAt - 300000 < Date.now()) {
-        const response = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            client_id: process.env.AUTH_GOOGLE_ID!,
-            client_secret: process.env.AUTH_GOOGLE_SECRET!,
-            refresh_token: account.refreshToken,
-            grant_type: 'refresh_token',
-          }),
-        });
+//     for (const account of accounts) {
+//       if (account.refreshToken && account.expiresAt - 300000 < Date.now()) {
+//         const response = await fetch('https://oauth2.googleapis.com/token', {
+//           method: 'POST',
+//           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//           body: new URLSearchParams({
+//             client_id: process.env.AUTH_GOOGLE_ID!,
+//             client_secret: process.env.AUTH_GOOGLE_SECRET!,
+//             refresh_token: account.refreshToken,
+//             grant_type: 'refresh_token',
+//           }),
+//         });
 
-        const newTokens = await response.json();
+//         const newTokens = await response.json();
         
-        await ctx.runMutation(internal.accounts.patchAccountToken, {
-          accountId: account._id,
-          accessToken: newTokens.access_token,
-          expiresIn: newTokens.expires_in
-        });
-      }
-    }
-  },
-});
+//         await ctx.runMutation(internal.accounts.patchAccountToken, {
+//           accountId: account._id,
+//           accessToken: newTokens.access_token,
+//           expiresIn: newTokens.expires_in
+//         });
+//       }
+//     }
+//   },
+// });

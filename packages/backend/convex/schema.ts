@@ -1,7 +1,6 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { accountFields, organizationFields, subscriptionFields, userFields } from "./fields";
 import { currencyValidator, INTERVALS, intervalValidator, OrganizationRole, planKeyValidator, pricesValidator } from "./validators";
 
 const schema = defineSchema({

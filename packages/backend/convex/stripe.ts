@@ -12,13 +12,14 @@ import {
 } from "./_generated/server";
 import { ERRORS } from "./utils/errors";
 import { currencyValidator, intervalValidator, PLANS } from "./validators";
+import { env } from "./env";
 
 // Might want to uncomment this for production
 // if (!STRIPE_SECRET_KEY) {
 //   throw new Error(`Stripe - ${ERRORS.ENVS_NOT_INITIALIZED})`);
 // }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+export const stripe = new Stripe(env.STRIPE_SECRET_KEY || "", {
   // This will be constantly changing
   apiVersion: "2025-02-24.acacia",
   typescript: true,
@@ -54,7 +55,9 @@ export const PREAUTH_createStripeCustomer = internalAction({
       orgId: args.orgId,
     });
 
-    const user = await ctx.runQuery(internal.utils.helpers.currentUser);
+    const user = await ctx.runQuery(internal.users.getLoggedInUser, {
+      id: args.userId,
+    });
 
     if (!user) throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
 
@@ -69,16 +72,16 @@ export const PREAUTH_createStripeCustomer = internalAction({
       })
       .catch((err) => console.error("Error on 73", err)) as Stripe.Customer;
 
-      if (!customer) throw new Error(ERRORS.STRIPE_CUSTOMER_NOT_CREATED);
+    if (!customer) throw new Error(ERRORS.STRIPE_CUSTOMER_NOT_CREATED);
 
-      await ctx.runAction(
-        internal.stripe.PREAUTH_createProTrialSubscription,
-        {
-          orgId: org._id,
-          customerId: customer.id,
-          currency: args.currency,
-        }
-      );
+    await ctx.runAction(
+      internal.stripe.PREAUTH_createProTrialSubscription,
+      {
+        orgId: org._id,
+        customerId: customer.id,
+        currency: args.currency,
+      }
+    );
   },
 });
 
@@ -355,8 +358,8 @@ export const createSubscriptionCheckout = action({
       line_items: [{ price: price?.stripeId, quantity: args.seats }],
       mode: "subscription",
       payment_method_types: ["card"],
-      success_url: `${process.env.SITE_URL}/${org.slug}?success=true`,
-      cancel_url: `${process.env.SITE_URL}/${org.slug}?success=false`,
+      success_url: `${env.SITE_URL}/${org.slug}?success=true`,
+      cancel_url: `${env.SITE_URL}/${org.slug}?success=false`,
       metadata: {
         seats: args.seats.toString()
       },
@@ -441,7 +444,7 @@ export const updateSubscription = action({
         },
       });
 
-      return `${process.env.SITE_URL}/${org.slug}/settings/organization/billing`;
+      return `${env.SITE_URL}/${org.slug}/settings/organization/billing`;
     } catch (error) {
       console.error('Error updating subscription:', error);
       throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
@@ -462,7 +465,7 @@ export const createCustomerPortal = action({
 
     const customerPortal = await stripe.billingPortal.sessions.create({
       customer: org.customerId,
-      return_url: `${process.env.SITE_URL}/${org.slug}/settings/organization/billing`,
+      return_url: `${env.SITE_URL}/${org.slug}/settings/organization/billing`,
     });
     if (!customerPortal) {
       throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
@@ -533,8 +536,8 @@ export const createPaymentIntent = action({
       const invoice = await stripe.invoices.retrieveUpcoming({
         customer: org.customerId,
         subscription: currentSubscription.stripeId,
-        subscription_items: [{ 
-          id: currentSubscription.stripeId, 
+        subscription_items: [{
+          id: currentSubscription.stripeId,
           price: price.stripeId,
           quantity: args.seats
         }],
@@ -584,7 +587,7 @@ export const PREAUTH_updateSubscriptionPaymentIntent = internalMutation({
       .query("subscriptions")
       .withIndex("by_orgId", (q) => q.eq("orgId", args.orgId))
       .unique();
-    
+
     if (!subscription) {
       throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
     }
@@ -661,7 +664,7 @@ export const querySubscriptions = internalMutation({
 
     const expiredTrials = await ctx.db
       .query("subscriptions")
-      .filter((q) => 
+      .filter((q) =>
         q.and(
           q.eq(q.field("status"), "trialing"),
           q.lt(q.field("currentPeriodEnd"), now)

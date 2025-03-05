@@ -2,12 +2,8 @@ import GitHub from "@auth/core/providers/github";
 import Google from "@auth/core/providers/google";
 import Resend from "@auth/core/providers/resend";
 import { Profile } from "@auth/core/types";
-import { Password } from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
-import { Id } from "./_generated/dataModel";
-import { aggregateUsers } from "./custom";
 import { ResendOTP } from "./otp/ResendOTP";
-import { ResendOTPPasswordReset } from "./passwordReset/ResendOTPPasswordReset";
 
 interface ExtendedProfile extends Profile {
   // Standard OpenID Connect fields
@@ -93,14 +89,6 @@ export const { auth, signIn, signOut, store } = convexAuth({
       }
     }),
     ResendOTP,
-    Password,
-    Password({ id: "password-with-reset", reset: ResendOTPPasswordReset }),
-    Password({
-      id: "password-code",
-      reset: ResendOTPPasswordReset,
-      verify: ResendOTP,
-    }),
-    Password({ id: "password-link", verify: Resend }),
     Resend({
       apiKey: process.env.RESEND_API_KEY,
     }),
@@ -112,62 +100,55 @@ export const { auth, signIn, signOut, store } = convexAuth({
       const type = args.type;
       const existingUserId = args.existingUserId;
 
-      console.log("profile", profile);
-      console.log("provider", provider);
-      console.log("type", type);
-      console.log("existingUserId", existingUserId);
-
       // If we have an existing user ID, return it immediately
       if (existingUserId) {
         return existingUserId;
       }
 
       // Refresh Google token if needed
-      // if (profile.expires_at && profile.expires_at - 300000 < Date.now()) {
-      //   const response = await fetch('https://oauth2.googleapis.com/token', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      //     body: new URLSearchParams({
-      //       client_id: process.env.AUTH_GOOGLE_ID!,
-      //       client_secret: process.env.AUTH_GOOGLE_SECRET!,
-      //       refresh_token: profile.refresh_token!,
-      //       grant_type: 'refresh_token',
-      //     }),
-      //   });
+      if (profile.expires_at && profile.expires_at - 300000 < Date.now()) {
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: process.env.AUTH_GOOGLE_ID!,
+            client_secret: process.env.AUTH_GOOGLE_SECRET!,
+            refresh_token: profile.refresh_token!,
+            grant_type: 'refresh_token',
+          }),
+        });
 
-      //   const newTokens = await response.json();
+        const newTokens = await response.json();
 
-      //   profile.access_token = newTokens.access_token;
-      //   profile.expires_at = Date.now() + (newTokens.expires_in ?? 3600) * 1000;
-      // }
+        profile.access_token = newTokens.access_token;
+        profile.expires_at = Date.now() + (newTokens.expires_in ?? 3600) * 1000;
+      }
 
       // Check for existing user by email
-      // const existingUser = profile.email ? await ctx.db.query("users")
-      //   .filter((q) => q.eq(q.field("email"), profile.email))
-      //   .first() : null;
+      const existingUser = profile.email ? await ctx.db.query("users")
+        .filter((q) => q.eq(q.field("email"), profile.email))
+        .first() : null;
 
-      // if (existingUser) {
-      //   const providers = existingUser.providers || [];
+      if (existingUser) {
+        const providers = existingUser.providers || [];
 
-      //   if (!providers.includes(provider.id)) {
-      //     await ctx.db.patch(existingUser._id, {
-      //       providers: [...providers, provider.id],
-      //       ...(provider.id === 'google' && profile.access_token && {
-      //         googleTokens: {
-      //           accessToken: profile.access_token,
-      //           refreshToken: profile.refresh_token,
-      //           expiresAt: profile.expires_at,
-      //         }
-      //       })
-      //     });
-      //   }
+        if (!providers.includes(provider.id)) {
+          await ctx.db.patch(existingUser._id, {
+            providers: [...providers, provider.id],
+            ...(provider.id === 'google' && profile.access_token && {
+              googleTokens: {
+                accessToken: profile.access_token,
+                refreshToken: profile.refresh_token,
+                expiresAt: profile.expires_at,
+              }
+            })
+          });
+        }
 
-      //   return existingUser._id;
-      // }
+        return existingUser._id;
+      }
 
       // Create new user
-      console.log("creating new user");
-
       const newUser = await ctx.db.insert("users", {
         email: profile?.email || "",
         emailVerified: profile?.email ? true : false,

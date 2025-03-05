@@ -6,7 +6,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@cvxstarter/ui/components/ui/collapsible"
+} from "@workspace/ui/components/collapsible"
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -16,7 +16,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@cvxstarter/ui/components/ui/sidebar"
+} from "@workspace/ui/components/sidebar"
 
 export function NavMain({
   items,
