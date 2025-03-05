@@ -3,14 +3,13 @@
 import { useCallback, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
 import Image from "next/image"
 import { useAuthActions } from "@convex-dev/auth/react";
 import { SignInWithGoogle } from "@/components/auth/signin-with-google";
 import { toast } from "sonner";
 import { CodeInput } from "@/components/auth/code-input";
 import { SignInWithCode } from "@/components/auth/signin-with-code";
+import { SignInWithGithub } from "@/components/auth/signin-with-github";
 
 export function SigninForm({
 	className,
@@ -24,6 +23,7 @@ export function SigninForm({
 		event.preventDefault();
 		setSubmitting(true);
 		const formData = new FormData(event.currentTarget);
+
 		try {
 			await signIn("resend-otp", formData);
 			toast.message("Code entered successfully", {
@@ -39,7 +39,6 @@ export function SigninForm({
 			window.location.reload();
 		}
 	}, [signIn]);
-
 
 	return (
 
@@ -64,15 +63,11 @@ export function SigninForm({
 							</a>
 							<h1 className="text-xl font-bold">Welcome to Convex Starter</h1>
 							<div className="text-center text-sm">
-								Don&apos;t have an account?{" "}
-								<a href="/signup" className="underline underline-offset-4">
-									Sign up
-								</a>
+								Sign in
 							</div>
 						</div>
 						<div className="flex flex-col gap-2">
 							<div className="grid gap-2">
-								<Label htmlFor="email">Email</Label>
 								<SignInWithCode handleCodeSent={(email) => setStep({ email })} />
 							</div>
 						</div>
@@ -81,8 +76,9 @@ export function SigninForm({
 								or
 							</span>
 						</div>
-						<div className="grid gap-4 sm:grid-cols-1">
+						<div className="grid gap-2 sm:grid-cols-2">
 							<SignInWithGoogle />
+							<SignInWithGithub />
 						</div>
 					</div>
 					<div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary  ">

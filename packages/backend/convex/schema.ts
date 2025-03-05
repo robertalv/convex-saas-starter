@@ -2,7 +2,7 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { accountFields, organizationFields, subscriptionFields, userFields } from "./fields";
-import { INTERVALS, planKeyValidator, pricesValidator } from "./validators";
+import { currencyValidator, INTERVALS, intervalValidator, OrganizationRole, planKeyValidator, pricesValidator } from "./validators";
 
 const schema = defineSchema({
   ...authTables,
@@ -14,7 +14,27 @@ const schema = defineSchema({
    * @index by_phone
    */
   users: defineTable({
-    ...userFields
+    email: v.optional(v.string()),
+    emailVerified: v.optional(v.boolean()),
+    emailVerificationTime: v.optional(v.float64()),
+    image: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    phoneVerified: v.optional(v.boolean()),
+    phoneVerificationTime: v.optional(v.float64()),
+    isOnboardingComplete: v.optional(v.boolean()),
+    orgIds: v.optional(v.array(v.object({
+      id: v.id("organization"),
+      role: OrganizationRole,
+      status: v.union(v.literal("pending"), v.literal("active"), v.literal("disabled")),
+      invitedBy: v.optional(v.id("users")),
+      invitedTime: v.optional(v.float64()),
+    }))),
+    providers: v.optional(v.array(v.string())),
+    activeOrgId: v.union(v.id("organization"), v.literal("")),
+    accounts: v.optional(v.array(v.id("accounts"))),
   })
     .index("by_email", ["email"])
     .index("by_orgIds", ["orgIds"])
@@ -27,7 +47,17 @@ const schema = defineSchema({
    * @index by_customerId
    */
   organization: defineTable({
-    ...organizationFields
+    name: v.string(),
+    image: v.optional(v.string()),
+    slug: v.string(),
+    color: v.string(),
+    customerId: v.optional(v.string()),
+    extendedFreeTrial: v.optional(v.boolean()),
+    updatedBy: v.optional(v.id("users")),
+    updatedTime: v.optional(v.string()),
+    ownerId: v.optional(v.id("users")),
+    joinCode: v.optional(v.string()),
+    plan: v.optional(v.string()),
   })
     .index("by_customerId", ["customerId"])
     .index("by_slug", ["slug"]),
@@ -60,7 +90,18 @@ const schema = defineSchema({
    * @index by_status
    */
   subscriptions: defineTable({
-    ...subscriptionFields
+    orgId: v.id("organization"),
+    planId: v.id("plans"),
+    priceStripeId: v.string(),
+    stripeId: v.string(),
+    currency: currencyValidator,
+    interval: intervalValidator,
+    status: v.string(),
+    currentPeriodStart: v.number(),
+    currentPeriodEnd: v.number(),
+    cancelAtPeriodEnd: v.boolean(),
+    seats: v.optional(v.number()),
+    paymentIntentId: v.optional(v.string())
   })
     .index("by_orgId", ["orgId"])
     .index("by_stripeId", ["stripeId"])
@@ -72,7 +113,20 @@ const schema = defineSchema({
    * @index by_userId
    */
   accounts: defineTable({
-    ...accountFields
+    id: v.string(),
+    userId: v.id("users"),
+    orgId: v.optional(v.id("organization")),
+    binaryIndex: v.optional(v.string()),
+    token: v.string(),
+    scope: v.string(),
+    refreshToken: v.string(),
+    provider: v.string(),
+    emailAddress: v.string(),
+    name: v.string(),
+    nextDeltaToken: v.optional(v.string()),
+    threads: v.optional(v.array(v.id("threads"))),
+    emailAddresses: v.optional(v.array(v.id("emailAddresses"))),
+    expiresAt: v.float64(),
   })
     .index("by_userId", ["userId"])
     .index("by_emailAddress", ["emailAddress"]),
@@ -83,17 +137,17 @@ const schema = defineSchema({
    * @index by_userId
    * @index by_orgId
    */
-    notifications: defineTable({
-      userId: v.optional(v.id("users")),
-      orgId: v.id("organization"),
-      notificationType: v.union(v.literal("notification"), v.literal("request")),
-      type: v.string(),
-      message: v.string(),
-      read: v.boolean(),
-      link: v.optional(v.string()),
-      requestUserId: v.optional(v.id("users")),
-      archived: v.boolean(),
-    })
+  notifications: defineTable({
+    userId: v.optional(v.id("users")),
+    orgId: v.id("organization"),
+    notificationType: v.union(v.literal("notification"), v.literal("request")),
+    type: v.string(),
+    message: v.string(),
+    read: v.boolean(),
+    link: v.optional(v.string()),
+    requestUserId: v.optional(v.id("users")),
+    archived: v.boolean(),
+  })
     .index("by_userId", ["userId"])
     .index("by_orgId", ["orgId"]),
 });

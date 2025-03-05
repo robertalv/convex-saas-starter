@@ -16,7 +16,6 @@ export function SignInWithCode({
 	const { signIn } = useAuthActions();
 	const [submitting, setSubmitting] = useState(false);
 
-
 	return (
 		<form
 			className="grid gap-y-2"
@@ -47,7 +46,8 @@ export function SignInWithCode({
 			<Input
 				id="email"
 				type="email"
-				placeholder="m@example.com"
+				name="email"
+				placeholder="m@convex-starter.com"
 				required
 			/>
 			{children}

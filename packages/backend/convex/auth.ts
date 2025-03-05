@@ -59,7 +59,7 @@ interface ExtendedProfile extends Profile {
   verified_email?: boolean;
   language?: string;
   avatar_url?: string;
-  
+
   // Any additional fields that might come from Google
   [key: string]: any;
 }
@@ -110,90 +110,80 @@ export const { auth, signIn, signOut, store } = convexAuth({
       const profile = args.profile as ExtendedProfile;
       const provider = args.provider;
       const type = args.type;
-      const existingUserId = args.existingUserId
+      const existingUserId = args.existingUserId;
 
-      if (profile.expires_at && profile.expires_at - 300000 < Date.now()) {
-        const response = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            client_id: process.env.AUTH_GOOGLE_ID!,
-            client_secret: process.env.AUTH_GOOGLE_SECRET!,
-            refresh_token: profile.refresh_token!,
-            grant_type: 'refresh_token',
-          }),
-        });
+      console.log("profile", profile);
+      console.log("provider", provider);
+      console.log("type", type);
+      console.log("existingUserId", existingUserId);
 
-        const newTokens = await response.json();
-        
-        profile.access_token = newTokens.access_token;
-        profile.expires_at = Date.now() + (newTokens.expires_in ?? 3600) * 1000;
+      // If we have an existing user ID, return it immediately
+      if (existingUserId) {
+        return existingUserId;
       }
 
-      const existingUser = await ctx.db.query("users")
-        .filter((q) => q.eq(q.field("email"), args.profile.email))
-        .first();
+      // Refresh Google token if needed
+      // if (profile.expires_at && profile.expires_at - 300000 < Date.now()) {
+      //   const response = await fetch('https://oauth2.googleapis.com/token', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      //     body: new URLSearchParams({
+      //       client_id: process.env.AUTH_GOOGLE_ID!,
+      //       client_secret: process.env.AUTH_GOOGLE_SECRET!,
+      //       refresh_token: profile.refresh_token!,
+      //       grant_type: 'refresh_token',
+      //     }),
+      //   });
 
-      if (existingUser) {
-        const providers = existingUser.providers || [];
-        
-        if (!providers.includes(args.provider.id)) {
-          await ctx.db.patch(existingUser._id, {
-            providers: [...providers, args.provider.id],
-            ...(args.provider.id === 'google' && profile.access_token && {
-              googleTokens: {
-                accessToken: profile.access_token,
-                refreshToken: profile.refresh_token,
-                expiresAt: profile.expires_at,
-              }
-            })
-          });
-        }
-            
-        return existingUser._id;
-      } else {
-          const newUser = await ctx.db.insert("users", {
-            email: profile?.email,
-            emailVerified: true,
-            emailVerificationTime: new Date().getTime(),
-            phoneVerified: false,
-            name: profile?.name,
-            firstName: profile?.given_name,
-            lastName: profile?.family_name,
-            image: profile?.image || profile?.picture,
-            isOnboardingComplete: false,
-            orgIds: [],
-            providers: [provider.id],
-            activeOrgId: "",
-          });
+      //   const newTokens = await response.json();
 
-          if (provider.id === 'google') {
-            const newAccount = await ctx.db.insert("accounts", {
-              id: profile.sub,
-              token: profile.access_token,
-              provider: provider.id,
-              emailAddress: profile.email,
-              name: profile.name,
-              userId: newUser as Id<"users">,
-              scope: profile.scope,
-              refreshToken: profile.refresh_token,
-              expiresAt: profile.expires_at,
-            })
+      //   profile.access_token = newTokens.access_token;
+      //   profile.expires_at = Date.now() + (newTokens.expires_in ?? 3600) * 1000;
+      // }
 
-            await ctx.db.patch(newUser, {
-              accounts: [newAccount as Id<"accounts">]
-            });
-          }
+      // Check for existing user by email
+      // const existingUser = profile.email ? await ctx.db.query("users")
+      //   .filter((q) => q.eq(q.field("email"), profile.email))
+      //   .first() : null;
 
-          const userId = await ctx.db.insert("users", newUser);
+      // if (existingUser) {
+      //   const providers = existingUser.providers || [];
 
-          const userDoc = await ctx.db.get(userId);
-          if (userDoc) {
-            await aggregateUsers.insertIfDoesNotExist(ctx, userDoc);
-          }
-          
-          return newUser;
-      }
+      //   if (!providers.includes(provider.id)) {
+      //     await ctx.db.patch(existingUser._id, {
+      //       providers: [...providers, provider.id],
+      //       ...(provider.id === 'google' && profile.access_token && {
+      //         googleTokens: {
+      //           accessToken: profile.access_token,
+      //           refreshToken: profile.refresh_token,
+      //           expiresAt: profile.expires_at,
+      //         }
+      //       })
+      //     });
+      //   }
+
+      //   return existingUser._id;
+      // }
+
+      // Create new user
+      console.log("creating new user");
+
+      const newUser = await ctx.db.insert("users", {
+        email: profile?.email || "",
+        emailVerified: profile?.email ? true : false,
+        emailVerificationTime: profile?.email ? new Date().getTime() : undefined,
+        phoneVerified: false,
+        name: profile?.name,
+        firstName: profile?.given_name,
+        lastName: profile?.family_name,
+        image: profile?.image || profile?.picture,
+        isOnboardingComplete: false,
+        orgIds: [],
+        providers: [provider.id],
+        activeOrgId: "",
+      });
+
+      return newUser;
     },
   },
   session: {
