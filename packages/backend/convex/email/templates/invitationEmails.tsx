@@ -1,21 +1,3 @@
-import {
-    Body,
-    Button,
-    Column,
-    Container,
-    Head,
-    Heading,
-    Hr,
-    Html,
-    Img,
-    Link,
-    Preview,
-    Row,
-    Section,
-    Tailwind,
-    Text,
-} from "@react-email/components";
-import { render } from "@react-email/render";
 import { sendEmail } from "../index";
 
 interface InvitationEmailOptions {
@@ -30,206 +12,159 @@ interface InvitationEmailOptions {
   inviteFromLocation?: string
 }
 
-/**
- * Templates.
- */
-export function InvitationSuccessEmail({ 
-  email, 
-  orgName, 
-  orgImage,
-  userImage, 
-  invitedByUser,
-  invitedByEmail,
-  inviteLink,
-}: InvitationEmailOptions) {
-  if (!orgName) {
-    throw new Error("Organization name is required");
-  }
-
-  const previewText = `Join ${invitedByUser} on ${orgName}`;
-  const logo = `https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/logo-white.png?alt=media&token=67f75ea8-d2b3-4721-9ff3-4bb6aee678a4`;
-  const arrow = `https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/arrow.png?alt=media&token=8ad4ab9e-5bc2-49d3-aaa2-f636e8dfe892`;
-
-  return (
-    <Html>
-      <Head />
-      <Preview>{previewText} </Preview>
-      <Tailwind>
-        <Body className="app-bg my-auto mx-auto font-sans px-2">
-          <Container className="border border-zinc-800 rounded-xl bg-zinc-900 my-[40px] mx-auto p-[20px] max-w-[465px]">
-            <Section className="mt-[32px]">
-              <Img
-                src={logo}
-                width="40"
-                height="40"
-                alt="Relio"
-                className="my-0 mx-auto rounded-full"
-              />
-            </Section>
-            <Heading className="text-zinc-200 text-[24px] font-normal text-center p-0 my-[30px] mx-0">
-              Join <strong>{orgName}</strong> on <strong>Relio</strong>
-            </Heading>
-            <Text className="text-zinc-200 text-[14px] leading-[24px]">
-              Hello,
-            </Text>
-            <Text className="text-zinc-200 text-[14px] leading-[24px]">
-              <strong>{invitedByUser}</strong> (
-              <Link
-                href={`mailto:${invitedByEmail}`}
-                className="text-indigo-600 no-underline"
-              >
-                {invitedByEmail}
-              </Link>
-              ) has invited you to the <strong>{orgName}</strong> organization on{" "}
-              <strong>Relio</strong>.
-            </Text>
-            <Section>
-              <Row>
-                <Column align="right">
-                {userImage ? (
-                  <Img
-                    className="rounded-full"
-                    src={userImage}
-                    width="64"
-                    height="64"
-                  />
-                ) : (
-                  <Text className="text-zinc-200 text-2xl h-[64px] w-[64px] rounded-full border border-zinc-800 flex justify-center items-center">
-                    {email?.charAt(0) || email?.charAt(0)}
-                  </Text>
-                )}
-                </Column>
-                <Column align="center">
-                  <Img
-                    src={arrow}
-                    width="12"
-                    height="9"
-                    alt="invited you to"
-                  />
-                </Column>
-                <Column align="left">
-                {orgImage ? (
-                  <Img
-                    className="rounded-full"
-                    src={orgImage}
-                    width="64"
-                    height="64"
-                  />
-                ) : (
-                  <Text className="text-zinc-200 text-2xl h-[64px] w-[64px] rounded-full border border-indigo-400 flex justify-center items-center bg-indigo-500">
-                    {orgName?.charAt(0)}
-                  </Text>
-                )}
-                </Column>
-              </Row>
-            </Section>
-            <Section className="text-center mt-[32px] mb-[32px]">
-              <Button className="bg-[#000000] rounded text-zinc-200 text-[12px] font-semibold no-underline text-center px-5 py-3" href={inviteLink}>
-                Join the team
-              </Button>
-            </Section>
-            <Text className="text-zinc-200 text-[14px] leading-[24px]">
-              or copy and paste this URL into your browser:{" "}
-              <Link href={inviteLink} className="text-indigo-600 no-underline">
-                {inviteLink}
-              </Link>
-            </Text>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
-  );
-}
-
-export function InvitationErrorEmail({ email }: InvitationEmailOptions) {
-  return (
-    <Html>
-      <Head />
-      <Preview>Subscription Issue - Customer Support</Preview>
-      <Body
-        style={{
-          backgroundColor: "#ffffff",
-          fontFamily:
-            '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
-        }}
-      >
-        <Container style={{ margin: "0 auto", padding: "20px 0 48px" }}>
-          <Img
-            src="https://react-email-demo-ijnnx5hul-resend.vercel.app/static/vercel-logo.png"
-            width="40"
-            height="37"
-            alt=""
-          />
-          <Text style={{ fontSize: "16px", lineHeight: "26px" }}>
-            Hello {email}.
-          </Text>
-          <Text style={{ fontSize: "16px", lineHeight: "26px" }}>
-            We were unable to process your subscription to PRO tier.
-            <br />
-            But don&apos;t worry, we&apos;ll not charge you anything.
-          </Text>
-          <Text style={{ fontSize: "16px", lineHeight: "26px" }}>
-            The <Link href="http://localhost:3000">domain-name.com</Link> team.
-          </Text>
-          <Hr style={{ borderColor: "#cccccc", margin: "20px 0" }} />
-          <Text style={{ color: "#8898aa", fontSize: "12px" }}>
-            200 domain-name.com
-          </Text>
-        </Container>
-      </Body>
-    </Html>
-  );
-}
-
-/**
- * Renders.
- */
-export function renderInvitationSuccessEmail(args: InvitationEmailOptions) {
-  return render(<InvitationSuccessEmail {...args} />);
-}
-
-export function renderSubscriptionErrorEmail(args: InvitationEmailOptions) {
-  return render(<InvitationErrorEmail {...args} />);
-}
-
-/**
- * Senders.
- */
-export async function sendInvitationSuccessEmail({
-  email, 
-  orgName, 
-  orgImage,
-  userImage,
-  invitedByUser,
-  invitedByEmail,
-  inviteLink,
-}: InvitationEmailOptions) {
-  const html = await renderInvitationSuccessEmail({ 
-    email, 
-    orgName,
+// Generate HTML for the invitation success email
+const generateInvitationSuccessHtml = (options: InvitationEmailOptions) => {
+  const {
+    email,
+    orgName = "an organization",
     orgImage,
     userImage,
-    invitedByUser,
-    invitedByEmail,
-    inviteLink,
-  });
+    invitedByUser = "Someone",
+    invitedByEmail = "a team member",
+    inviteLink = "https://app.reliocrm.com/organizations"
+  } = options;
 
-  await sendEmail({
-    to: email,
-    subject: `You've been invited to join ${orgName}`,
-    html,
-  });
+  const logo = "https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/logo-white.png?alt=media&token=67f75ea8-d2b3-4721-9ff3-4bb6aee678a4";
+  const arrow = "https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/arrow.png?alt=media&token=8ad4ab9e-5bc2-49d3-aaa2-f636e8dfe892";
+  const defaultUserImage = "https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/avatar-placeholder.png?alt=media&token=60c66f02-5c16-47f7-9e0c-ed3680496dbd";
+  const defaultOrgImage = "https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/org-placeholder.png?alt=media&token=67f75ea8-d2b3-4721-9ff3-4bb6aee678a4";
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Join ${orgName} on Relio</title>
+      </head>
+      <body style="margin: 0; padding: 0 10px; background-color: #131313; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <div style="border: 1px solid #27272a; border-radius: 12px; background-color: #18181b; margin: 40px auto; padding: 20px; max-width: 465px;">
+          <div style="margin-top: 32px; text-align: center;">
+            <img src="${logo}" width="40" height="40" alt="Relio" style="margin: 0 auto; border-radius: 50%;">
+          </div>
+          
+          <h1 style="color: #e4e4e7; font-size: 24px; font-weight: normal; text-align: center; padding: 0; margin: 30px 0;">
+            Join <strong>${orgName}</strong> on <strong>Relio</strong>
+          </h1>
+          
+          <p style="color: #e4e4e7; font-size: 14px; line-height: 24px;">
+            Hello,
+          </p>
+          
+          <p style="color: #e4e4e7; font-size: 14px; line-height: 24px;">
+            <strong>${invitedByUser}</strong> (<a href="mailto:${invitedByEmail}" style="color: #818cf8; text-decoration: none;">${invitedByEmail}</a>) 
+            has invited you to the <strong>${orgName}</strong> organization on <strong>Relio</strong>.
+          </p>
+          
+          <div style="text-align: center; margin-top: 32px; margin-bottom: 32px;">
+            <a href="${inviteLink}" style="background-color: #000000; border-radius: 4px; color: #e4e4e7; font-size: 12px; font-weight: 600; text-decoration: none; text-align: center; padding: 15px 20px; display: inline-block;">
+              Join the team
+            </a>
+          </div>
+          
+          <p style="color: #e4e4e7; font-size: 14px; line-height: 24px;">
+            or copy and paste this URL into your browser: <a href="${inviteLink}" style="color: #818cf8; text-decoration: none;">${inviteLink}</a>
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
+// Generate HTML for the invitation error email
+const generateInvitationErrorHtml = (options: InvitationEmailOptions) => {
+  const { email = "there", orgName = "an organization" } = options;
+  const logo = "https://firebasestorage.googleapis.com/v0/b/relio-217bd.appspot.com/o/logo-white.png?alt=media&token=67f75ea8-d2b3-4721-9ff3-4bb6aee678a4";
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Subscription Issue - Customer Support</title>
+      </head>
+      <body style="margin: 0; padding: 0 10px; background-color: #131313; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <div style="border: 1px solid #27272a; border-radius: 12px; background-color: #18181b; margin: 40px auto; padding: 20px; max-width: 465px;">
+          <div style="margin-top: 32px; text-align: center;">
+            <img src="${logo}" width="40" height="40" alt="Relio" style="margin: 0 auto; border-radius: 50%;">
+          </div>
+          
+          <h1 style="color: #e4e4e7; font-size: 24px; font-weight: normal; text-align: center; padding: 0; margin: 30px 0;">
+            Subscription Issue
+          </h1>
+          
+          <p style="color: #e4e4e7; font-size: 14px; line-height: 24px;">
+            Hello ${email}.
+          </p>
+          
+          <p style="color: #e4e4e7; font-size: 14px; line-height: 24px;">
+            We were unable to process your subscription to PRO tier.
+            <br>
+            But don't worry, we'll not charge you anything.
+          </p>
+          
+          <p style="color: #e4e4e7; font-size: 14px; line-height: 24px;">
+            The <a href="https://reliocrm.com" style="color: #818cf8; text-decoration: none;">Relio</a> team.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #27272a; margin: 20px 0;">
+          
+          <p style="color: #71717a; font-size: 12px;">
+            &copy; 2025 Relio
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
+/**
+ * Sends an invitation success email to the specified user
+ */
+export async function sendInvitationSuccessEmail(options: InvitationEmailOptions) {
+  try {
+    // Check if any required props are missing to prevent errors
+    if (!options.email) {
+      console.error("Missing email for invitation");
+      return;
+    }
+    
+    // Generate HTML for the email
+    const html = generateInvitationSuccessHtml(options);
+
+    // Send the email with the HTML content
+    await sendEmail({
+      to: options.email,
+      subject: `You've been invited to join ${options.orgName || "an organization"}`,
+      html,
+    });
+  } catch (error) {
+    console.error("Error sending invitation email:", error);
+    throw new Error(`Failed to send invitation email: ${error}`);
+  }
 }
 
-export async function sendInvitationErrorEmail({
-  email,
-  orgName,
-}: InvitationEmailOptions) {
-  const html = await renderSubscriptionErrorEmail({ email, orgName });
+/**
+ * Sends an error notification email
+ */
+export async function sendInvitationErrorEmail(options: InvitationEmailOptions) {
+  try {
+    // Check if email is missing to prevent errors
+    if (!options.email) {
+      console.error("Missing email for error notification");
+      return;
+    }
+    
+    // Generate HTML for the email
+    const html = generateInvitationErrorHtml(options);
 
-  await sendEmail({
-    to: email,
-    subject: "Invitation Issue - Customer Support",
-    html,
-  });
+    // Send the email with the HTML content
+    await sendEmail({
+      to: options.email,
+      subject: `Subscription Issue - Customer Support`,
+      html,
+    });
+  } catch (error) {
+    console.error("Error sending error email:", error);
+    throw new Error(`Failed to send error notification email: ${error}`);
+  }
 }

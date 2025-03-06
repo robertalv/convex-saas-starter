@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
@@ -211,47 +211,53 @@ export const addUserToOrg = mutation({
     const org = await ctx.db.get(args.orgId as Id<"organization">);
 
     if (!user || !org) {
-      return {
-        success: false,
+      throw new ConvexError({
         message: "User or organization not found",
-      };
+        code: "NOT_FOUND"
+      });
     }
 
     if (user.orgIds?.some(org => org.id === args.orgId)) {
       return {
-        success: false,
+        success: true,
         message: "User already in organization",
       };
     }
 
     if (org.joinCode !== args.code) {
-      return {
-        success: false,
-        message: "Invalid code",
-      };
+      throw new ConvexError({
+        message: "Invalid join code",
+        code: "INVALID_CODE"
+      });
     }
 
+    // Add user to organization with active status
     await ctx.db.patch(args.userId, {
       orgIds: [...(user.orgIds || []), {
         id: args.orgId as Id<"organization">,
         role: "org:member",
-        status: "pending",
+        status: "active", // Set to active instead of pending
+        joinedAt: Date.now()
       }],
+      // Set this org as active if user doesn't have an active org
+      activeOrgId: user.activeOrgId ? user.activeOrgId : args.orgId
     });
 
+    // Create a notification for org admins
     await ctx.db.insert("notifications", {
       orgId: args.orgId,
       type: "org:join",
-      message: `${user.name} has requested to join ${org.name}`,
+      message: `${user.name || user.email} has joined ${org.name}`,
       read: false,
-      notificationType: "request",
-      requestUserId: args.userId,
+      notificationType: "info",
+      userId: args.userId,
       archived: false,
+      createdAt: Date.now()
     });
 
     return {
       success: true,
-      message: "User added to organization",
+      message: "Successfully joined organization",
     };
   },
 });
@@ -319,33 +325,36 @@ export const inviteUserMutation = internalMutation({
 
 export const inviteUserAction = action({
   args: {
-    userId: v.id("users"),
-    orgId: v.id("organization"),
-    invitations: v.array(v.object({
+    invitations: v.optional(v.array(v.object({
       email: v.string(),
       role: v.string(),
-    })),
+    }))),
   },
   handler: async (ctx, args) => {
+    const currentUser = await ctx.runQuery(internal.utils.helpers.currentUser);
+    const userId = currentUser?._id as Id<"users">;
+    const orgId = currentUser?.activeOrgId as Id<"organization">;
+
+    if (!args.invitations) {
+      return new ConvexError("no invitations we're added")
+    }
+
     const results = await Promise.all(args.invitations.map(invitation =>
       ctx.runMutation(internal.users.inviteUserMutation, {
-        orgId: args.orgId,
+        orgId,
         email: invitation.email,
         role: invitation.role,
       })
     )) as any;
 
-    const user = await ctx.runQuery(internal.utils.helpers.currentUser);
-
     const org = await ctx.runQuery(internal.organization.getOrganization, {
-      orgId: args.orgId,
+      orgId,
     });
 
     const invitationLink = `https://app.reliocrm.com/organizations`;
 
     try {
       for (const result of results) {
-        // Check that email exists before attempting to send
         if (!result.email) {
           console.error("Missing email for invitation", result);
           continue;
@@ -355,9 +364,9 @@ export const inviteUserAction = action({
           email: result.email,
           orgName: org?.name,
           orgImage: org?.image,
-          userImage: user?.image,
-          invitedByUser: user?.name,
-          invitedByEmail: user?.email,
+          userImage: currentUser?.image,
+          invitedByUser: currentUser?.name,
+          invitedByEmail: currentUser?.email,
           inviteLink: invitationLink,
         });
       }
