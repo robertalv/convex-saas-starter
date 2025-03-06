@@ -4,10 +4,11 @@ import Signin from "@/app/(auth)/signin/[[...signin]]/page";
 import { Authenticated, AuthLoading, Unauthenticated, useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@workspace/backend/convex/_generated/api";
-import { Onboarding } from "@/app/(root)/onboarding/page";
+import { Onboarding } from "./onboarding/page";
 import { useRouter } from "next/navigation";
 import { User, ActiveOrg } from "@/types";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export default function RootPage() {
   const router = useRouter();
@@ -16,10 +17,16 @@ export default function RootPage() {
   const user = useQuery(api.users.viewer) as (User & { activeOrg?: ActiveOrg }) | null;
   const update = useMutation(api.users.update);
 
+  useEffect(() => {
+    if (user?.isOnboardingComplete) {
+      router.push('/dashboard');
+    }
+  }, [user?.isOnboardingComplete, router]);
+
   return (
     <div>
       <AuthLoading>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center h-screen w-screen">
           <div className="animate-spin">
             <Image src="/convex.png" alt="Convex Logo" width={60} height={60} />
           </div>
@@ -36,8 +43,10 @@ export default function RootPage() {
             )}
           </div>
         ) : (
-          <div>
-            Dashboard
+          <div className="flex items-center justify-center h-screen w-screen">
+            <div className="animate-spin">
+              <Image src="/convex.png" alt="Convex Logo" width={60} height={60} />
+            </div>
           </div>
         )}
       </Authenticated>

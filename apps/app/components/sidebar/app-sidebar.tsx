@@ -25,8 +25,10 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@workspace/ui/components/sidebar"
+import { useQuery } from "convex/react"
+import { api } from "@workspace/backend/convex/_generated/api"
+import { ActiveOrg } from "@/types"
 
-// This is sample data.
 const data = {
   user: {
     name: "shadcn",
@@ -157,10 +159,16 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const user = useQuery(api.users.viewer);
+  const orgs = useQuery(api.organization.getUserOrganizations, {
+    id: user?._id,
+    status: "active"
+  }) || [];
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <OrgSwitcher orgs={data.orgs} />
+        {orgs.length > 0 && <OrgSwitcher activeOrg={user?.activeOrg} orgs={orgs as ActiveOrg[]} />}
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

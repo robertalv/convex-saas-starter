@@ -356,7 +356,6 @@ export const setActiveOrganizationBySlug = mutation({
   },
 });
 
-
 export const updateOrganization = mutation({
   args: {
     id: v.union(v.literal(""), v.id("organization")),
@@ -384,7 +383,7 @@ export const updateOrganization = mutation({
     let updates: any = {
       ...updateFields,
       updatedBy: currentUser._id as Id<"users">,
-      updatedTime: new Date().toISOString(),
+      updatedTime: new Date().getTime(),
     };
 
     if (name) {

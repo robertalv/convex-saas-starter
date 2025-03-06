@@ -55,3 +55,21 @@ export type ActiveOrg = {
 export type OrganizationRole = "org:owner" | "org:admin" | "org:member"
 
 export type Status = "pending" | "active" | "disabled"
+
+export type OnboardingProps = {
+  update: ReactMutation<FunctionReference<"mutation", "public", UserProfile, null, string | undefined>>;
+  user: User & { activeOrg?: ActiveOrg };
+}
+
+export type ProfileFormData = {
+  firstName: string;
+  lastName: string;
+  name: string;
+  image: string;
+}
+
+export type OrgFormData = {
+  name: string;
+  image: string;
+  slug: string;
+}

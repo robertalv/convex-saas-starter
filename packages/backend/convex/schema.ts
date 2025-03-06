@@ -53,7 +53,7 @@ const schema = defineSchema({
     customerId: v.optional(v.string()),
     extendedFreeTrial: v.optional(v.boolean()),
     updatedBy: v.optional(v.id("users")),
-    updatedTime: v.optional(v.string()),
+    updatedTime: v.optional(v.float64()),
     ownerId: v.optional(v.id("users")),
     joinCode: v.optional(v.string()),
     plan: v.optional(v.string()),
