@@ -150,13 +150,17 @@ export const getActiveOrganization = query({
     const plan = subscription?.planId
       ? await ctx.db.get(subscription.planId)
       : undefined;
+
     const imageUrl = org.image
       ? await ctx.storage.getUrl(imageId as Id<"_storage">)
       : undefined;
+
+
     return {
       ...org,
       _id: orgId._id,
       image: imageUrl || undefined,
+      plan,
       subscription:
         subscription && plan
           ? {

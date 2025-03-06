@@ -15,7 +15,7 @@ const OrganizationForm = memo(({
     data: OrgFormData;
     onChange: (data: OrgFormData) => void;
     onSubmit: () => void;
-    onBack: () => void;
+    onBack?: () => void;
 }) => {
     const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newName = e.target.value;
@@ -61,9 +61,11 @@ const OrganizationForm = memo(({
                 >
                     Create Organization
                 </Button>
-                <Button onClick={onBack} className="w-full" variant="outline">
-                    Back
-                </Button>
+                {onBack && (
+                    <Button onClick={onBack} className="w-full" variant="outline">
+                        Back
+                    </Button>
+                )}
             </div>
         </div>
     );

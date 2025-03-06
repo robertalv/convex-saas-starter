@@ -30,15 +30,8 @@ import { api } from "@workspace/backend/convex/_generated/api"
 import { Id } from "@workspace/backend/convex/_generated/dataModel"
 import { useTheme } from "next-themes"
 import { useAuthActions } from "@convex-dev/auth/react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@workspace/ui/components/dialog"
+import CreateOrganizationModal from "../modals/create-organization-modal"
+import { useRouter } from "next/navigation"
 
 export function OrgSwitcher({
   orgs,
@@ -51,6 +44,7 @@ export function OrgSwitcher({
   const setActive = useMutation(api.organization.setActiveOrganization)
   const { theme, setTheme } = useTheme()
   const { signOut } = useAuthActions();
+  const router = useRouter()
 
   if (!activeOrg) {
     return null
@@ -116,14 +110,18 @@ export function OrgSwitcher({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
-              <div className="flex size-6 items-center justify-center">
-                <Plus className="size-4" />
-              </div>
-              <div className="font-medium text-muted-foreground">Add organization</div>
-            </DropdownMenuItem>
+            <CreateOrganizationModal
+              trigger={
+                <DropdownMenuItem className="gap-2 p-2" onSelect={(e) => e.preventDefault()}>
+                  <div className="flex size-6 items-center justify-center">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="font-medium text-muted-foreground">Add organization</div>
+                </DropdownMenuItem>
+              }
+            />
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem className="gap-2 p-2" onClick={() => router.push("/settings/account")}>
               <div className="flex size-6 items-center justify-center">
                 <User className="size-4" />
               </div>
@@ -131,7 +129,7 @@ export function OrgSwitcher({
                 Account Settings
               </div>
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem className="gap-2 p-2" onClick={() => router.push("/settings/organization")}>
               <div className="flex size-6 items-center justify-center">
                 <Building className="size-4" />
               </div>

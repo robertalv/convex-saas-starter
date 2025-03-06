@@ -73,3 +73,5 @@ export type OrgFormData = {
   image: string;
   slug: string;
 }
+
+export type ViewerUser = (User & { activeOrg?: ActiveOrg }) | null;

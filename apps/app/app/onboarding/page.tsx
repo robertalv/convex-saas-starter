@@ -1,5 +1,7 @@
-import { useState, useCallback, memo } from "react";
-import { useMutation } from "convex/react";
+"use client";
+
+import { useState, useCallback, useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { Id } from "@workspace/backend/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { OnboardingProps, ProfileFormData, OrgFormData } from "@/types";
@@ -8,80 +10,92 @@ import FormWrapper from "../../components/form-wrapper";
 import ProfileForm from "../../components/forms/profile-form";
 import OrganizationForm from "../../components/forms/organization-form";
 
-export const Onboarding = ({ update, user }: OnboardingProps) => {
-	const router = useRouter();
-	const [step, setStep] = useState(1);
-	const createOrg = useMutation(api.organization.create);
-	const completeOnboarding = useMutation(api.organization.completeOnboarding);
+export default function OnboardingPage({ update, user }: OnboardingProps) {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const createOrg = useMutation(api.organization.create);
+  const completeOnboarding = useMutation(api.organization.completeOnboarding);
 
-	const [profileData, setProfileData] = useState<ProfileFormData>({
-		firstName: user?.firstName || "",
-		lastName: user?.lastName || "",
-		name: `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
-		image: user?.image || ""
-	});
+  const currentUser = useQuery(api.users.viewer);
 
-	const [orgData, setOrgData] = useState<OrgFormData>({
-		name: "",
-		image: "",
-		slug: ""
-	});
+  useEffect(() => {
+    if (currentUser?.isOnboardingComplete) {
+      router.push('/dashboard');
+    }
+  }, [currentUser?.isOnboardingComplete, router]);
 
-	const handleProfileSubmit = useCallback(async () => {
-		if (!user?._id) return;
+  const [profileData, setProfileData] = useState<ProfileFormData>({
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    name: `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+    image: user?.image || ""
+  });
 
-		try {
-			await update({
-				id: user._id as Id<"users">,
-				...profileData,
-			});
-			setStep(2);
-		} catch (error) {
-			console.error("Failed to update profile:", error);
-		}
-	}, [profileData, update, user?._id]);
+  const [orgData, setOrgData] = useState<OrgFormData>({
+    name: "",
+    image: "",
+    slug: ""
+  });
 
-	const handleOrgSubmit = useCallback(async () => {
-		try {
-			const { id: orgId } = await createOrg({
-				name: orgData.name,
-				slug: orgData.slug,
-				image: orgData.image,
-			});
+  const handleProfileSubmit = useCallback(async () => {
+    if (!user?._id) return;
 
-			await completeOnboarding({
-				orgId,
-				currency: "usd",
-			});
+    try {
+      await update({
+        id: user._id as Id<"users">,
+        ...profileData,
+      });
+      setStep(2);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
+  }, [profileData, update, user?._id]);
 
-			router.push("/");
-		} catch (error) {
-			console.error("Failed to create organization:", error);
-		}
-	}, [createOrg, completeOnboarding, orgData, router]);
+  const handleOrgSubmit = useCallback(async () => {
+    try {
+      const { id: orgId } = await createOrg({
+        name: orgData.name,
+        slug: orgData.slug,
+        image: orgData.image,
+      });
 
-	return step === 1 ? (
-		<FormWrapper
-			title="Complete Your Profile"
-			description="Please provide your information to get started"
-		>
-			<ProfileForm
-				data={profileData}
-				onChange={setProfileData}
-				onSubmit={handleProfileSubmit}
-			/>
-		</FormWrapper>
-	) : (
-		<FormWrapper
-			title="Create your organization"
-			description="Let's get started by creating your organization"
-		>
-			<OrganizationForm
-				data={orgData}
-				onChange={setOrgData}
-				onSubmit={handleOrgSubmit}
-				onBack={() => setStep(1)}
-			/>
-		</FormWrapper>
-	);
+      await completeOnboarding({
+        orgId,
+        currency: "usd",
+      });
+
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to create organization:", error);
+    }
+  }, [createOrg, completeOnboarding, orgData, router]);
+
+  return step === 1 ? (
+    <div className="flex flex-col items-center justify-center h-full w-full">
+      <FormWrapper
+        title="Complete Your Profile"
+        description="Please provide your information to get started"
+      >
+        <ProfileForm
+          data={profileData}
+          onChange={setProfileData}
+          onSubmit={handleProfileSubmit}
+        />
+      </FormWrapper>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center h-full w-full">
+      <FormWrapper
+        title="Create your organization"
+        description="Let's get started by creating your organization"
+      >
+        <OrganizationForm
+          data={orgData}
+          onChange={setOrgData}
+          onSubmit={handleOrgSubmit}
+          onBack={() => setStep(1)}
+        />
+      </FormWrapper>
+    </div>
+  );
 };

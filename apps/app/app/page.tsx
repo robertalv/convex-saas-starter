@@ -2,19 +2,17 @@
 
 import Signin from "@/app/(auth)/signin/[[...signin]]/page";
 import { Authenticated, AuthLoading, Unauthenticated, useQuery, useMutation } from "convex/react";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@workspace/backend/convex/_generated/api";
-import { Onboarding } from "./onboarding/page";
+import OnboardingPage from "./onboarding/page";
 import { useRouter } from "next/navigation";
-import { User, ActiveOrg } from "@/types";
+import { ViewerUser } from "@/types";
 import Image from "next/image";
 import { useEffect } from "react";
 
 export default function RootPage() {
   const router = useRouter();
-  const { signOut } = useAuthActions();
 
-  const user = useQuery(api.users.viewer) as (User & { activeOrg?: ActiveOrg }) | null;
+  const user = useQuery(api.users.viewer) as ViewerUser;
   const update = useMutation(api.users.update);
 
   useEffect(() => {
@@ -36,7 +34,7 @@ export default function RootPage() {
         {!user?.isOnboardingComplete ? (
           <div>
             {user && (
-              <Onboarding
+              <OnboardingPage
                 update={update}
                 user={user}
               />

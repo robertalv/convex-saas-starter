@@ -444,7 +444,7 @@ export const updateSubscription = action({
         },
       });
 
-      return `${env.SITE_URL}/${org.slug}/settings/organization/billing`;
+      return `http://${env.SITE_URL}/settings/organization`;
     } catch (error) {
       console.error('Error updating subscription:', error);
       throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
@@ -456,21 +456,25 @@ export const createCustomerPortal = action({
   args: {
     orgId: v.id("organization"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     const org = await ctx.runQuery(api.organization.getActiveOrganization, {});
 
     if (!org || !org.customerId) {
       throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
     }
 
+    console.log("org", org);
+
     const customerPortal = await stripe.billingPortal.sessions.create({
       customer: org.customerId,
-      return_url: `${env.SITE_URL}/${org.slug}/settings/organization/billing`,
+      return_url: `http://${env.SITE_URL}/settings/organization`,
     });
-    if (!customerPortal) {
-      throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
-    }
-    return customerPortal.url;
+
+    // if (!customerPortal) {
+    //   throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
+    // }
+
+    // return customerPortal.url;
   },
 });
 
