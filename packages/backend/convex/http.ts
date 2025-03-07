@@ -50,11 +50,16 @@ const handleUpdateSubscription = async (
   subscription: Stripe.Subscription,
 ) => {
   const subscriptionItem = subscription.items.data[0];
+
+  if (!subscriptionItem) {
+    throw new Error(ERRORS.STRIPE_SOMETHING_WENT_WRONG);
+  }
+  
   await ctx.runMutation(internal.stripe.PREAUTH_replaceSubscription, {
     orgId: org._id,
     subscriptionStripeId: subscription.id,
     input: {
-      currency: subscription?.items?.data[0]?.price?.currency as Currency,
+      currency: subscription.items.data[0]?.price?.currency as Currency,
       planStripeId: subscriptionItem.plan.product as string,
       priceStripeId: subscriptionItem.price.id,
       interval: subscriptionItem.plan.interval as Interval,
