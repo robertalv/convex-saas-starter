@@ -24,6 +24,7 @@ import type * as init from "../init.js";
 import type * as notifications from "../notifications.js";
 import type * as organization from "../organization.js";
 import type * as otp_ResendOTP from "../otp/ResendOTP.js";
+import type * as sessions from "../sessions.js";
 import type * as stripe from "../stripe.js";
 import type * as users from "../users.js";
 import type * as utils_errors from "../utils/errors.js";
@@ -62,6 +63,7 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   organization: typeof organization;
   "otp/ResendOTP": typeof otp_ResendOTP;
+  sessions: typeof sessions;
   stripe: typeof stripe;
   users: typeof users;
   "utils/errors": typeof utils_errors;

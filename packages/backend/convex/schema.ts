@@ -150,6 +150,23 @@ const schema = defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_orgId", ["orgId"]),
+
+  /**
+   * @name sessions
+   * @description Sessions table
+   * @index by_anonymous_id
+   */
+  sessions: defineTable({
+    anonymousId: v.string(),
+    createdAt: v.string(),
+    lastActive: v.string(),
+    actions: v.array(v.object({
+      action: v.string(),
+      timestamp: v.string(),
+      resourceId: v.optional(v.string()),
+      metadata: v.optional(v.any())
+    }))
+  }).index("by_anonymous_id", ["anonymousId"]),
 });
 
 export default schema;
