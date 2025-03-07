@@ -8,8 +8,9 @@
     "deploy": "convex deploy"
   },
   "dependencies": {
+    "@auth/core": "0.37.0",
     "@convex-dev/aggregate": "^0.1.14",
-    "@convex-dev/auth": "^0.0.57",
+    "@convex-dev/auth": "^0.0.80",
     "@convex-dev/migrations": "^0.2.5",
     "@convex-dev/react-query": "^0.0.0-alpha.5",
     "@react-email/components": "^0.0.15",

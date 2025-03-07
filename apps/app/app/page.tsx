@@ -17,7 +17,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (user?.isOnboardingComplete) {
-      router.push('/dashboard');
+      router.push(`${user.activeOrg?.slug}/dashboard`);
     }
   }, [user?.isOnboardingComplete, router]);
 
@@ -34,10 +34,12 @@ export default function RootPage() {
         {!user?.isOnboardingComplete ? (
           <div>
             {user && (
-              <OnboardingPage
-                update={update}
-                user={user}
-              />
+              <div className="flex items-center justify-center h-screen w-screen">
+                <OnboardingPage
+                  update={update}
+                  user={user}
+                />
+              </div>
             )}
           </div>
         ) : (
@@ -49,7 +51,9 @@ export default function RootPage() {
         )}
       </Authenticated>
       <Unauthenticated>
-        <Signin />
+        <div className="flex items-center justify-center h-screen w-screen">
+          <Signin />
+        </div>
       </Unauthenticated>
     </div>
   );

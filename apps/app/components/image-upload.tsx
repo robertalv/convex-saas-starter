@@ -1,49 +1,113 @@
 "use client";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
+import { Button } from "@workspace/ui/components/button";
+import { UploadIcon, UserCircle } from "lucide-react";
 import { memo, useCallback } from "react";
+import { useGenerateUploadUrl } from "@/hooks/use-generate-upload-url";
+import { useDeleteImage } from "@/hooks/use-delete-image";
+import { Id } from "@workspace/backend/convex/_generated/dataModel";
+import { toast } from "sonner";
+import { UploadButton, UploadFileResponse } from "@xixixao/uploadstuff/react";
+import { useMutation } from "convex/react";
+import { api } from "@workspace/backend/convex/_generated/api";
 
 const ImageUpload = memo(({
-    image,
-    onImageChange,
-    label
+  image,
+  data,
+  type,
+  label,
+  onImageChange,
 }: {
-    image: string;
-    onImageChange: (image: string) => void;
-    label: string;
+  image?: string;
+  data: any;
+  type: "organization" | "users";
+  label: string;
+  onImageChange?: (image: string) => void;
 }) => {
-    const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                onImageChange(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    }, [onImageChange]);
+  const { mutate: generateUploadUrl } = useGenerateUploadUrl();
+  const { mutate: deleteImage } = useDeleteImage();
+  const updateUser = useMutation(api.users.update);
+  const updateOrganization = useMutation(api.organization.update);
 
-    return (
-        <div>
-            <label className="block text-sm font-medium">{label}</label>
-            <div className="mt-2 flex items-center space-x-4">
-                <div className="h-16 w-16 rounded-full overflow-hidden border flex items-center justify-center bg-gray-200">
-                    {image ? (
-                        <img src={image} alt={label} className="h-full w-full object-cover" />
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2-1a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V4a1 1 0 00-1-1H6zM5 5a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-                        </svg>
-                    )}
-                </div>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="text-sm cursor-pointer"
-                />
-            </div>
+  const storageId = image?.split("storageId=")[1];
+
+  const updateImage = useCallback(async (url: string) => {
+    if (type === "organization") {
+      if (onImageChange) onImageChange(url);
+    }
+
+    if (type === "users") {
+      if (onImageChange) onImageChange(url);
+    }
+  }, [data, type, updateOrganization, updateUser, onImageChange]);
+
+  const handleRemoveImage = useCallback(() => {
+    if (!storageId) return;
+
+    deleteImage({
+      id: type === "organization" ? data._id as Id<"organization"> : data._id as Id<"users">,
+      storageId: storageId as Id<"_storage">,
+    })
+
+    if (onImageChange) onImageChange("");
+
+  }, [storageId, data, type, deleteImage, onImageChange]);
+
+  return (
+    <div>
+      <label className="block text-sm font-medium">{label}</label>
+      <div className="mt-2 flex items-center space-x-4">
+        <div className="relative h-16 w-16 rounded-full overflow-hidden border flex items-center justify-center bg-muted group">
+          {image ? (
+            <Avatar className="h-full w-full">
+              <AvatarImage src={image} alt={label} />
+              <AvatarFallback>{label[0]}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <UserCircle className="text-muted-foreground" />
+          )}
         </div>
-    );
+        <div className="flex flex-row space-x-2">
+          <UploadButton
+            className={() =>
+              "cursor-pointer inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2"
+            }
+            uploadUrl={() => generateUploadUrl().then(result => result?.data || '')}
+            fileTypes={["image/*"]}
+            onUploadComplete={async (uploaded: UploadFileResponse[]) => {
+              const uploadedImage = (uploaded[0]?.response as any).storageId as string;
+              const imageUrl = `${process.env.NEXT_PUBLIC_CONVEX_SITE_URL}/getImage?storageId=${uploadedImage}`;
+              updateImage(imageUrl);
+            }}
+            onUploadError={(error: unknown) => {
+              toast.error(`Upload error: ${error}`);
+            }}
+            content={(progress) => {
+              if (progress === null) {
+                return "Upload";
+              }
+              return `${progress}%`;
+            }}
+          />
+          {image && (
+            <Button
+              onClick={handleRemoveImage}
+              variant="destructive"
+
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      </div>
+      <p className="text-xs mt-2 text-muted-foreground">
+        We support JPG, PNG, and GIF images under 10MB
+      </p>
+    </div>
+  );
 });
+
+ImageUpload.displayName = "ImageUpload";
 
 export default ImageUpload;

@@ -33,6 +33,8 @@ const OrganizationForm = memo(({
                 image={data.image}
                 onImageChange={handleImageChange}
                 label="Organization Logo"
+                type="organization"
+                data={data}
             />
 
             <div>

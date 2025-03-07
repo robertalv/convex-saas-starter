@@ -3,11 +3,13 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { aggregateUsers } from "./custom";
+import { aggregateUsers, aggregateUsersByOrg } from "./custom";
 import { sendInvitationSuccessEmail } from "./email/templates/invitationEmails";
 import { userFields } from "./fields";
 import { hasAccessToOrg } from "./utils/helpers";
 import { OrganizationRole } from "./validators";
+import { getRandomColor } from "./utils/tools";
+import { env } from "./env";
 
 export const create = mutation({
   args: {
@@ -32,6 +34,7 @@ export const create = mutation({
     providers: v.optional(v.array(v.string())),
     activeOrgId: v.union(v.id("organization"), v.literal("")),
     accounts: v.optional(v.array(v.id("accounts"))),
+    color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existingUser = await ctx.db
@@ -63,6 +66,7 @@ export const create = mutation({
         status: org.status as "pending" | "active" | "disabled"
       })) ?? [],
       activeOrgId: args.activeOrgId as Id<"organization"> | "",
+      color: getRandomColor()
     };
 
     const userId = await ctx.db.insert("users", newUser);
@@ -94,7 +98,8 @@ export const update = mutation({
     }))),
     activeOrgId: v.optional(v.id("organization")),
     providers: v.optional(v.array(v.string())),
-    accounts: v.optional(v.array(v.id("accounts")))
+    accounts: v.optional(v.array(v.id("accounts"))),
+    color: v.optional(v.string())
   },
   handler: async (ctx, args) => {
     const { id, ...userFields } = args;
@@ -174,6 +179,7 @@ export const createNewUserAndSetOrg = mutation({
     lastName: v.string(),
     name: v.optional(v.string()),
     image: v.optional(v.string()),
+    color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await ctx.db.insert("users", {
@@ -189,11 +195,12 @@ export const createNewUserAndSetOrg = mutation({
         status: "active",
       }],
       activeOrgId: args.orgId,
+      color: getRandomColor(),
     });
 
     const userDoc = await ctx.db.get(userId);
     if (userDoc) {
-      await aggregateUsers.insertIfDoesNotExist(ctx, userDoc);
+      await aggregateUsersByOrg.insertIfDoesNotExist(ctx, userDoc);
     }
 
     return userId;
@@ -211,53 +218,51 @@ export const addUserToOrg = mutation({
     const org = await ctx.db.get(args.orgId as Id<"organization">);
 
     if (!user || !org) {
-      throw new ConvexError({
+      return {
+        success: false,
         message: "User or organization not found",
-        code: "NOT_FOUND"
-      });
+      };
     }
 
     if (user.orgIds?.some(org => org.id === args.orgId)) {
       return {
-        success: true,
+        success: false,
         message: "User already in organization",
       };
     }
 
     if (org.joinCode !== args.code) {
-      throw new ConvexError({
-        message: "Invalid join code",
-        code: "INVALID_CODE"
-      });
+      return {
+        success: false,
+        message: "Invalid code",
+      };
     }
 
-    // Add user to organization with active status
     await ctx.db.patch(args.userId, {
       orgIds: [...(user.orgIds || []), {
         id: args.orgId as Id<"organization">,
         role: "org:member",
-        status: "active", // Set to active instead of pending
-        joinedAt: Date.now()
+        status: "pending",
       }],
-      // Set this org as active if user doesn't have an active org
-      activeOrgId: user.activeOrgId ? user.activeOrgId : args.orgId
     });
 
-    // Create a notification for org admins
+    if (user) {
+      await aggregateUsersByOrg.insertIfDoesNotExist(ctx, user);
+    }
+
     await ctx.db.insert("notifications", {
       orgId: args.orgId,
       type: "org:join",
-      message: `${user.name || user.email} has joined ${org.name}`,
+      message: `${user.name} has requested to join ${org.name}`,
       read: false,
-      notificationType: "info",
-      userId: args.userId,
+      notificationType: "request",
+      requestUserId: args.userId,
       archived: false,
-      createdAt: Date.now()
     });
 
     return {
       success: true,
-      message: "Successfully joined organization",
+      message: "User added to organization",
     };
   },
 });
@@ -332,7 +337,6 @@ export const inviteUserAction = action({
   },
   handler: async (ctx, args) => {
     const currentUser = await ctx.runQuery(internal.utils.helpers.currentUser);
-    const userId = currentUser?._id as Id<"users">;
     const orgId = currentUser?.activeOrgId as Id<"organization">;
 
     if (!args.invitations) {
@@ -351,7 +355,7 @@ export const inviteUserAction = action({
       orgId,
     });
 
-    const invitationLink = `https://app.reliocrm.com/organizations`;
+    const invitationLink = `${env.SITE_URL}/organization/join/${orgId}`;
 
     try {
       for (const result of results) {

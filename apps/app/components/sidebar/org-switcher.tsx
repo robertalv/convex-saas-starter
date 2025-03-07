@@ -56,6 +56,8 @@ export function OrgSwitcher({
     }
   };
 
+  console.log("Orgs", orgs)
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -96,7 +98,7 @@ export function OrgSwitcher({
               >
                 <div className="flex size-6 items-center justify-center border">
                   <Avatar className="size-6">
-                    <AvatarImage src={org.image} alt={org.name} />
+                    <AvatarImage src={org?.image} alt={org.name} />
                     <AvatarFallback style={{ backgroundColor: org.color }}>
                       {org.name.charAt(0).toUpperCase()}
                     </AvatarFallback>

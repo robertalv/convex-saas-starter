@@ -39,7 +39,6 @@ export default function InviteUsersModal({
   const { mutate: refreshJoinCode, isLoading } = useRefreshJoinCode();
   const { organization } = useOrganization()
   const [open, setOpen] = useState(false)
-  const [inviteCode, setInviteCode] = useState<string | null>(organization?.joinCode || null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [invitations, setInvitations] = useState<InviteUserData[]>([
     { email: "", role: "org:member" }
@@ -108,6 +107,7 @@ export default function InviteUsersModal({
     } finally {
       setInvitations([{ email: "", role: "org:member" }])
       setIsSubmitting(false)
+      setOpen(false)
     }
   }
 
@@ -132,7 +132,7 @@ export default function InviteUsersModal({
       orgId: organization._id
     }, {
       onSuccess: () => {
-        toast.success('Join code refreshed');
+        console.log("Refreshing join code...")
       },
       onError: (error) => {
         toast.error('Error refreshing join code');

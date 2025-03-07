@@ -45,7 +45,12 @@ export default function OnboardingPage({ update, user }: OnboardingProps) {
         id: user._id as Id<"users">,
         ...profileData,
       });
-      setStep(2);
+
+      await completeOnboarding({
+        orgId: user.activeOrgId as Id<"organization">,
+        currency: "usd",
+      });
+      router.push("/");
     } catch (error) {
       console.error("Failed to update profile:", error);
     }
@@ -59,31 +64,13 @@ export default function OnboardingPage({ update, user }: OnboardingProps) {
         image: orgData.image,
       });
 
-      await completeOnboarding({
-        orgId,
-        currency: "usd",
-      });
-
-      router.push("/");
+      setStep(2);
     } catch (error) {
       console.error("Failed to create organization:", error);
     }
   }, [createOrg, completeOnboarding, orgData, router]);
 
   return step === 1 ? (
-    <div className="flex flex-col items-center justify-center h-full w-full">
-      <FormWrapper
-        title="Complete Your Profile"
-        description="Please provide your information to get started"
-      >
-        <ProfileForm
-          data={profileData}
-          onChange={setProfileData}
-          onSubmit={handleProfileSubmit}
-        />
-      </FormWrapper>
-    </div>
-  ) : (
     <div className="flex flex-col items-center justify-center h-full w-full">
       <FormWrapper
         title="Create your organization"
@@ -93,6 +80,19 @@ export default function OnboardingPage({ update, user }: OnboardingProps) {
           data={orgData}
           onChange={setOrgData}
           onSubmit={handleOrgSubmit}
+        />
+      </FormWrapper>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center h-full w-full">
+      <FormWrapper
+        title="Complete Your Profile"
+        description="Please provide your information to get started"
+      >
+        <ProfileForm
+          data={profileData}
+          onChange={setProfileData}
+          onSubmit={handleProfileSubmit}
           onBack={() => setStep(1)}
         />
       </FormWrapper>

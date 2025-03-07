@@ -16,7 +16,7 @@ export function CodeInput({ length = 8 }: { length?: number }) {
 							<InputOTPSlot
 								key={index}
 								index={index}
-								className="w-10 h-10 bg-zinc-900 text-accent-foreground flex items-center justify-center text-2xl border border-zinc-800 rounded-lg code-font"
+								className="w-10 h-10 bg-zinc-900 text-accent-foreground flex items-center justify-center text-2xl border border-zinc-800 code-font !rounded-none"
 							/>
 						))}
 				</InputOTPGroup>

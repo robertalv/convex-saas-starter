@@ -32,7 +32,7 @@ const generateEmailHtml = (code: string) => `
 
 export const ResendOTP = Email({
   id: "resend-otp",
-  apiKey: process.env.RESEND_API_KEY || process.env.AUTH_RESEND_KEY,
+  apiKey: process.env.AUTH_RESEND_KEY,
   maxAge: 60 * 15,
   async generateVerificationToken() {
     return generateRandomString(8, alphabet("0-9"));

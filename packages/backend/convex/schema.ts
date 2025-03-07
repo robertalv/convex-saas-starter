@@ -34,6 +34,7 @@ const schema = defineSchema({
     providers: v.optional(v.array(v.string())),
     activeOrgId: v.union(v.id("organization"), v.literal("")),
     accounts: v.optional(v.array(v.id("accounts"))),
+    color: v.optional(v.string()),
   })
     .index("by_email", ["email"])
     .index("by_orgIds", ["orgIds"])

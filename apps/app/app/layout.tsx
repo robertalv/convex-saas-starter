@@ -4,9 +4,8 @@ import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "@workspace/ui/globals.css"
 import { Providers } from "@/components/providers"
 import ConvexClientProvider from "@/components/providers/convex-client-provider";
-import { AppSidebar } from "@/components/sidebar/app-sidebar";
-import Topbar from "@/components/topbar";
 import { Toaster } from "@workspace/ui/components/sonner";
+
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -31,13 +30,7 @@ export default async function RootLayout({
         >
           <Providers>
             <ConvexClientProvider>
-              <AppSidebar />
-              <div className="flex flex-col w-full">
-                <Topbar />
-                <main className="p-4">
-                  {children}
-                </main>
-              </div>
+              {children}
               <Toaster />
             </ConvexClientProvider>
           </Providers>

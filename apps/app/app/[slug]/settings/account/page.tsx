@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import ProfileCard from "@/app/settings/account/profile-card";
+import ProfileCard from "@/app/[slug]/settings/account/profile-card";
 import { api } from "@workspace/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { ViewerUser } from "@/types";

@@ -13,6 +13,7 @@ import {
 import { hasAccessToOrg, user } from "./utils/helpers";
 import { currencyValidator, PLANS } from "./validators";
 import { getRandomColor } from "./utils/tools";
+import { aggregateUsersByOrg, aggregateOrganizations } from "./custom";
 
 const generateUniqueCode = () => {
   return Math.random().toString(36).substring(2, 10).replace(/[^a-zA-Z0-9]/g, '');
@@ -27,7 +28,7 @@ export const refreshJoinCode = mutation({
 
 
     const userOrgIds = currentUser?.orgIds;
-    if (!userOrgIds || !userOrgIds.some((org: any) => org.role === "org:admin")) {
+    if (!userOrgIds || !userOrgIds.some((org: any) => org.role === "org:owner" || "org:admin")) {
       throw new ConvexError("You are not authorized to refresh the join code");
     }
 
@@ -90,6 +91,11 @@ export const create = mutation({
       plan: args.plan,
     });
 
+    const orgDoc = await ctx.db.get(newOrg);
+    if (orgDoc) {
+      await aggregateOrganizations.insertIfDoesNotExist(ctx, orgDoc);
+    }
+
     const updatedOrgIds = [
       ...(currentUser?.orgIds || []),
       {
@@ -104,9 +110,14 @@ export const create = mutation({
     });
 
     await ctx.db.patch(currentUser?._id as Id<"users">, {
-      isOnboardingComplete: true,
       orgIds: updatedOrgIds,
     });
+
+    if (currentUser) {
+      await aggregateUsersByOrg.insertIfDoesNotExist(ctx, currentUser);
+
+      console.log("Aggregate user created");
+    }
 
     return {
       error: false,
@@ -240,6 +251,10 @@ export const acceptUser = mutation({
     await ctx.db.patch(args.userId, {
       orgIds: user.orgIds,
     });
+
+    if (user) {
+      aggregateUsersByOrg.insertIfDoesNotExist(ctx, user);
+    }
   },
 });
 
@@ -272,6 +287,10 @@ export const removeUser = mutation({
       await ctx.db.patch(args.userId, {
         orgIds: user.orgIds,
       });
+
+      if (user) {
+        aggregateUsersByOrg.deleteIfExists(ctx, user);
+      }
     }
   },
 });
@@ -360,7 +379,7 @@ export const setActiveOrganizationBySlug = mutation({
   },
 });
 
-export const updateOrganization = mutation({
+export const update = mutation({
   args: {
     id: v.union(v.literal(""), v.id("organization")),
     name: v.optional(v.string()),
@@ -519,9 +538,23 @@ export function getFullOrganization(ctx: QueryCtx | MutationCtx, orgId: string) 
     .first();
 }
 
-function jsonToCsv(json: any): string {
-  const array = [Object.keys(json[0])].concat(json.map((obj: any) => Object.values(obj)));
+export const checkOrganizationId = query({
+  args: {
+    orgId: v.union(v.id("organization"), v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.orgId || args.orgId === "") {
+      return false;
+    }
 
-  return array.map((row) => row.join(',')).join('\n');
-}
+    try {
+      const orgId = args.orgId as Id<"organization">;
+      const org = await ctx.db.get(orgId);
 
+      return org;
+    } catch (error) {
+      console.error("Invalid organization ID format", error);
+      return false;
+    }
+  },
+});

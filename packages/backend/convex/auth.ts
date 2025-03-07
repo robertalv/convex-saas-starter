@@ -66,14 +66,14 @@ export const { auth, signIn, signOut, store } = convexAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-          scope: "https://mail.google.com https://www.googleapis.com/auth/userinfo.profile"
-        }
-      },
+      // authorization: {
+      //   params: {
+      //     prompt: "consent",
+      //     access_type: "offline",
+      //     response_type: "code",
+      //     scope: "https://mail.google.com https://www.googleapis.com/auth/userinfo.profile"
+      //   }
+      // },
       profile(profile, tokens) {
         return {
           ...profile,
@@ -90,7 +90,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
     }),
     ResendOTP,
     Resend({
-      apiKey: process.env.RESEND_API_KEY,
+      apiKey: process.env.AUTH_RESEND_KEY,
     }),
   ],
   callbacks: {
@@ -162,6 +162,37 @@ export const { auth, signIn, signOut, store } = convexAuth({
         orgIds: [],
         providers: [provider.id],
         activeOrgId: "",
+      });
+
+      // Check if google provider account already exists
+      const googleAccount = await ctx.db.query("accounts")
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("provider"), provider.id),
+            q.eq(q.field("userId"), newUser),
+            q.eq(q.field("email"), profile?.email)
+          )
+        )
+        .collect();
+
+      let account;
+      // Insert Google account into accounts collection
+      if (!googleAccount && provider.id === 'google') {
+        account = await ctx.db.insert("accounts", {
+          id: provider.id,
+          userId: newUser,
+          token: profile.access_token,
+          scope: profile.scope,
+          refreshToken: profile?.refresh_token || "",
+          provider: provider.id,
+          emailAddress: profile.email || "",
+          name: profile.name || `${profile.given_name} ${profile.family_name}`,
+          expiresAt: profile.expires_at,
+        })
+      }
+
+      await ctx.db.patch(newUser, {
+        accounts: [account]
       });
 
       return newUser;

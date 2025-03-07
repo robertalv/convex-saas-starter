@@ -1,4 +1,4 @@
-import { AppSidebar } from "../../components/sidebar/app-sidebar"
+import { AppSidebar } from "../../../components/sidebar/app-sidebar"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

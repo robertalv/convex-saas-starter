@@ -11,6 +11,7 @@ export type UserProfile = {
   phone?: string | undefined;
   isOnboardingComplete?: boolean | undefined;
   id: Id<"users">;
+  color: string;
 }
 
 export type User = {
@@ -34,6 +35,7 @@ export type User = {
   phoneVerified?: boolean;
   providers?: string[];
   activeOrg?: ActiveOrg;
+  color: string;
 }
 
 export type ActiveOrg = {
